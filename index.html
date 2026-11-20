@@ -437,14 +437,19 @@ const $ = id => document.getElementById(id);
 const catWrap = $("categories"), shelf = $("shelf");
 let currentCat = null, lastCatEl = null;
 
-function open(url){ window.open(url, "_blank", "noopener"); }
+function openUrl(url){
+  // Nieuw tabblad; lukt dat niet (popup-blokker of TV-browser zonder tabs), open dan in hetzelfde venster
+  const w = window.open(url, "_blank");
+  if (w) { try { w.opener = null; } catch(e){} }
+  else location.href = url;
+}
 
 CATEGORIES.forEach(c => {
   const b = document.createElement("button");
   b.className = "cat nav"; b.dataset.cat = c.id;
   b.innerHTML = `<div class="ico">${ICONS[c.id]}</div>${ICONS.arrow}<h2>${c.title}</h2><p>${c.sub}</p>`;
   b.addEventListener("click", () => {
-    if (c.action) return open(c.action);
+    if (c.action) return openUrl(c.action);
     showShelf(c);
     const first = shelf.querySelector(".nav"); if (first) focusEl(first);
   });
@@ -471,7 +476,7 @@ function showShelf(c){
     if (it.type === "game"){
       el.classList.add("game");
       el.innerHTML = `${pixelArt()}<span class="badge" style="right:auto;left:24px">Spelen</span><div class="name">${it.name}</div><div class="meta">${it.meta}</div>`;
-      el.onclick = () => open(it.url);
+      el.onclick = () => openUrl(it.url);
     } else if (it.type === "soon"){
       el.classList.add("soon");
       el.innerHTML = `<div class="glyph">${ICONS.plus}</div><div class="name">${it.name}</div><div class="meta">${it.meta}</div>`;
@@ -481,13 +486,13 @@ function showShelf(c){
       el.innerHTML = `<span class="badge">${it.stream ? "Live" : "Web"}</span><div class="eq"><i></i><i></i><i></i><i></i></div>
         <div class="mono" style="font-size:30px">${stationMono(it.name)}</div><div class="name">${it.name}</div><div class="meta">${it.meta}</div>`;
       if (playing && playing.name === it.name) el.classList.add("playing");
-      el.onclick = () => it.stream ? play(it) : open(it.url);
+      el.onclick = () => it.stream ? play(it) : openUrl(it.url);
     } else {
       if (it.wide) el.classList.add("wide");
       el.innerHTML = `${it.glyph ? `<div class="glyph">${ICONS[it.glyph]}</div>` : `<div class="mono">${it.mono}</div>`}
         <span class="badge">${ICONS.web.replace('<svg','<svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:-2px"')}</span>
         <div class="name">${it.name}</div><div class="meta">${it.meta}</div>`;
-      el.onclick = () => open(it.url);
+      el.onclick = () => openUrl(it.url);
     }
     shelf.appendChild(el);
   });
