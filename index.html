@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thuis Startcenter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0e0c;
+    --bg-2:#121512;
+    --surface:rgba(232,226,212,.045);
+    --surface-2:rgba(232,226,212,.075);
+    --line:rgba(226,218,200,.09);
+    --line-2:rgba(226,218,200,.16);
+    --text:#efe9dd;
+    --muted:#a59e90;
+    --faint:#6f6a60;
+    --moss:#b6c4a8;          /* silver moss */
+    --moss-2:#8d9d80;
+    --moss-glow:rgba(182,196,168,.38);
+    --walnut:#6e4b34;        /* walnoot */
+    --walnut-2:#3f2b1e;
+    --beige:#dcc8a9;         /* warm beige */
+    --radius:28px;
+    --ease:cubic-bezier(.2,.8,.2,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);overflow:hidden}
+  body{
+    color:var(--text);
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased;
+    cursor:default;
+  }
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  a{color:inherit;text-decoration:none}
+
+  /* ---------- Stage: ontworpen op 1920x1080, schaalt mee met het scherm ---------- */
+  #stage{
+    position:absolute;left:50%;top:50%;
+    width:1920px;height:1080px;
+    transform-origin:center center;
+    padding:64px 96px 52px;
+    display:grid;
+    grid-template-columns:1fr 520px;
+    grid-template-rows:auto 1fr auto;
+    column-gap:56px;row-gap:36px;
+  }
+
+  /* ---------- Achtergrond ---------- */
+  .ambient{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .ambient::before,.ambient::after{
+    content:"";position:absolute;border-radius:50%;filter:blur(120px);opacity:.55;
+    animation:drift 38s ease-in-out infinite alternate;
+  }
+  .ambient::before{width:70vw;height:70vw;left:-22vw;top:-38vw;background:radial-gradient(circle,rgba(150,170,135,.32),transparent 65%)}
+  .ambient::after{width:60vw;height:60vw;right:-20vw;bottom:-32vw;background:radial-gradient(circle,rgba(120,80,52,.42),transparent 65%);animation-delay:-14s}
+  .grid-overlay{
+    position:fixed;inset:0;pointer-events:none;opacity:.35;
+    background-image:
+      linear-gradient(rgba(220,210,190,.035) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(220,210,190,.035) 1px,transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse at 50% 30%,#000 10%,transparent 75%);
+  }
+  .vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55))}
+  @keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(6vw,4vw) scale(1.12)}}
+
+  /* ---------- Topbalk ---------- */
+  header{grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:22px}
+  .brand-mark{
+    width:56px;height:56px;border-radius:18px;position:relative;
+    background:linear-gradient(145deg,var(--beige),var(--walnut) 120%);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 10px 30px rgba(0,0,0,.4);
+  }
+  .brand-mark::after{content:"";position:absolute;inset:14px;border-radius:50%;border:3px solid rgba(30,22,16,.75);border-top-color:transparent;transform:rotate(-45deg)}
+  .greeting{font-family:Sora,sans-serif;font-weight:300;font-size:40px;letter-spacing:-.01em}
+  .greeting b{font-weight:500;color:var(--beige)}
+  .sub{font-size:19px;color:var(--muted);margin-top:4px;letter-spacing:.02em}
+
+  .status{display:flex;align-items:center;gap:36px}
+  .wx-mini{display:flex;align-items:center;gap:14px;font-size:22px;color:var(--muted)}
+  .wx-mini svg{width:40px;height:40px}
+  .wx-mini b{font-family:Sora,sans-serif;font-weight:400;font-size:30px;color:var(--text)}
+  .divider{width:1px;height:58px;background:linear-gradient(transparent,var(--line-2),transparent)}
+  .clock{text-align:right}
+  .clock .time{font-family:Sora,sans-serif;font-weight:300;font-size:76px;line-height:.95;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .clock .time span{color:var(--moss);animation:blink 2s steps(1) infinite}
+  .clock .date{font-size:19px;color:var(--muted);margin-top:8px;text-transform:capitalize;letter-spacing:.02em}
+  @keyframes blink{50%{opacity:.25}}
+
+  /* ---------- Hoofdgedeelte ---------- */
+  main{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:40px;min-width:0}
+  .label{
+    display:flex;align-items:center;gap:14px;
+    font-size:17px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);margin-bottom:22px;
+  }
+  .label::before{content:"";width:28px;height:2px;border-radius:2px;background:var(--moss)}
+  .label .count{margin-left:auto;letter-spacing:.08em;color:var(--faint);text-transform:none;font-size:17px}
+
+  .categories{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+  .cat{
+    position:relative;height:352px;border-radius:var(--radius);padding:34px;
+    display:flex;flex-direction:column;justify-content:flex-end;text-align:left;
+    background:var(--surface);border:1px solid var(--line);
+    overflow:hidden;isolation:isolate;
+    transition:transform .35s var(--ease),box-shadow .35s var(--ease),border-color .35s,background .35s;
+  }
+  .cat::before{ /* tint per categorie */
+    content:"";position:absolute;inset:0;z-index:-1;opacity:.55;transition:opacity .35s;
+    background:var(--tint);
+  }
+  .cat::after{ /* glans */
+    content:"";position:absolute;inset:-1px;z-index:-1;border-radius:inherit;opacity:0;transition:opacity .35s;
+    background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.09) 45%,transparent 60%);
+    background-size:250% 100%;
+  }
+  .cat[data-cat=games]{--tint:radial-gradient(120% 90% at 0% 0%,rgba(182,196,168,.22),transparent 60%)}
+  .cat[data-cat=entertainment]{--tint:radial-gradient(120% 90% at 100% 0%,rgba(110,75,52,.45),transparent 62%)}
+  .cat[data-cat=radio]{--tint:radial-gradient(120% 90% at 0% 100%,rgba(220,200,169,.18),transparent 60%)}
+  .cat[data-cat=browser]{--tint:radial-gradient(120% 90% at 100% 100%,rgba(141,157,128,.22),transparent 60%)}
+  .cat .ico{
+    position:absolute;top:34px;left:34px;width:76px;height:76px;border-radius:22px;
+    display:grid;place-items:center;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);
+    transition:background .35s,border-color .35s;
+  }
+  .cat .ico svg{width:40px;height:40px;stroke:var(--beige);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:stroke .35s}
+  .cat .arrow{position:absolute;top:40px;right:34px;width:30px;height:30px;stroke:var(--faint);fill:none;stroke-width:1.8;transition:transform .35s var(--ease),stroke .35s}
+  .cat h2{font-family:Sora,sans-serif;font-weight:500;font-size:31px;white-space:nowrap;letter-spacing:-.01em}
+  .cat p{font-size:19px;color:var(--muted);margin-top:8px}
+  .cat.selected{border-color:var(--line-2);background:var(--surface-2)}
+  .cat.selected::before{opacity:1}
+
+  /* Focus: de kern van de TV-ervaring */
+  .nav:focus{outline:none}
+  .nav:focus,.nav.focus{outline:none}
+  .cat:focus,.cat.focus{
+    transform:translateY(-6px) scale(1.04);
+    border-color:rgba(182,196,168,.75);
+    box-shadow:0 0 0 2px rgba(182,196,168,.5),0 0 60px -6px var(--moss-glow),0 30px 60px -20px rgba(0,0,0,.8);
+    background:rgba(232,226,212,.09);
+  }
+  .cat:focus::before,.cat.focus::before{opacity:1}
+  .cat:focus::after,.cat.focus::after{opacity:1;animation:sheen 2.4s var(--ease) infinite}
+  .cat:focus .ico,.cat.focus .ico{background:rgba(182,196,168,.16);border-color:rgba(182,196,168,.4)}
+  .cat:focus .ico svg,.cat.focus .ico svg{stroke:var(--moss)}
+  .cat:focus .arrow,.cat.focus .arrow{stroke:var(--moss);transform:translate(4px,-4px)}
+  @keyframes sheen{from{background-position:120% 0}to{background-position:-120% 0}}
+
+  /* ---------- Shelf (inhoud van gekozen categorie) ---------- */
+  .shelf-wrap{position:relative;min-height:0}
+  .shelf{
+    display:flex;gap:24px;overflow-x:auto;overflow-y:visible;
+    padding:14px 14px 22px;margin:-14px -14px 0;
+    scrollbar-width:none;scroll-behavior:smooth;
+  }
+  .shelf::-webkit-scrollbar{display:none}
+  .shelf.swap{animation:shelfIn .45s var(--ease)}
+  @keyframes shelfIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .shelf-fade{position:absolute;right:-14px;top:0;bottom:0;width:120px;pointer-events:none;background:linear-gradient(90deg,transparent,var(--bg));opacity:0;transition:opacity .3s}
+  .shelf-wrap.overflow .shelf-fade{opacity:1}
+
+  .item{
+    flex:0 0 auto;position:relative;width:268px;height:200px;border-radius:22px;padding:24px;
+    display:flex;flex-direction:column;justify-content:flex-end;text-align:left;
+    background:var(--surface);border:1px solid var(--line);overflow:hidden;isolation:isolate;
+    transition:transform .3s var(--ease),box-shadow .3s var(--ease),border-color .3s,background .3s;
+  }
+  .item .name{font-family:Sora,sans-serif;font-weight:500;font-size:25px;letter-spacing:-.01em;line-height:1.15}
+  .item .meta{font-size:16px;color:var(--muted);margin-top:6px}
+  .item .badge{
+    position:absolute;top:20px;right:20px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+    padding:6px 11px;border-radius:99px;border:1px solid var(--line-2);color:var(--muted);
+  }
+  .item .glyph{position:absolute;top:22px;left:24px;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+  .item .glyph svg{width:24px;height:24px;stroke:var(--beige);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .item .mono{position:absolute;top:18px;left:24px;font-family:Sora,sans-serif;font-weight:600;font-size:40px;letter-spacing:-.04em;color:var(--beige);opacity:.9}
+  .item::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--tint,none);opacity:.8}
+  .item:focus,.item.focus{
+    transform:translateY(-5px) scale(1.06);
+    border-color:rgba(182,196,168,.75);
+    box-shadow:0 0 0 2px rgba(182,196,168,.5),0 0 44px -6px var(--moss-glow),0 24px 50px -18px rgba(0,0,0,.8);
+    background:rgba(232,226,212,.09);
+  }
+  .item.wide{width:340px}
+  .item.game{width:420px;height:200px}
+  .item.game::before{background:
+    radial-gradient(90% 120% at 100% 0%,rgba(182,196,168,.28),transparent 60%),
+    radial-gradient(70% 90% at 0% 100%,rgba(110,75,52,.45),transparent 60%)}
+  .item.game .pixels{position:absolute;right:26px;top:26px;display:grid;grid-template-columns:repeat(5,12px);gap:4px;opacity:.85}
+  .item.game .pixels i{width:12px;height:12px;border-radius:3px;background:var(--beige);opacity:.15}
+  .item.game .pixels i.on{opacity:.9}
+  .item.game .pixels i.m{background:var(--moss);opacity:.9}
+  .item.soon{opacity:.45;border-style:dashed}
+  .item.soon:focus,.item.soon.focus{opacity:.8}
+
+  /* Radio items */
+  .item.station{width:232px}
+  .item.station.playing{border-color:rgba(182,196,168,.55);background:rgba(182,196,168,.08)}
+  .eq{display:none;position:absolute;top:24px;right:22px;gap:4px;align-items:flex-end;height:22px}
+  .item.station.playing .eq{display:flex}
+  .item.station.playing .badge{display:none}
+  .eq i{width:4px;border-radius:2px;background:var(--moss);animation:eq 1s ease-in-out infinite}
+  .eq i:nth-child(1){animation-delay:-.2s}.eq i:nth-child(2){animation-delay:-.6s}.eq i:nth-child(3){animation-delay:-.4s}.eq i:nth-child(4){animation-delay:-.8s}
+  @keyframes eq{0%,100%{height:5px}50%{height:22px}}
+
+  /* ---------- Zijkolom ---------- */
+  aside{grid-column:2;grid-row:2 / span 2;display:flex;flex-direction:column;gap:24px;min-height:0}
+  .card{
+    border-radius:var(--radius);border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(232,226,212,.06),rgba(232,226,212,.025));
+    backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+    padding:28px 32px;position:relative;overflow:hidden;
+  }
+  .card .label{margin-bottom:14px}
+
+  .wx-now{display:flex;align-items:center;justify-content:space-between}
+  .wx-temp{font-family:Sora,sans-serif;font-weight:200;font-size:92px;line-height:.9;letter-spacing:-.05em}
+  .wx-temp sup{font-size:40px;font-weight:300;vertical-align:top;margin-left:4px;color:var(--muted)}
+  .wx-icon svg{width:104px;height:104px}
+  .wx-desc{font-size:22px;margin-top:14px}
+  .wx-extra{display:flex;gap:22px;font-size:17px;color:var(--muted);margin-top:8px}
+  .wx-days{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+  .wx-day{text-align:center;font-size:16px;color:var(--muted)}
+  .wx-day svg{width:34px;height:34px;margin:6px auto 4px;display:block}
+  .wx-day b{display:block;color:var(--text);font-weight:500;font-size:18px}
+  .wx-day small{font-size:15px;color:var(--faint)}
+
+  .news{flex:1;display:flex;flex-direction:column;min-height:0}
+  .news-list{list-style:none;display:flex;flex-direction:column;gap:2px;overflow:hidden;flex:1}
+  .news-item{
+    display:block;padding:11px 16px;margin:0 -16px;border-radius:16px;border:1px solid transparent;
+    transition:background .3s,border-color .3s,transform .3s var(--ease);
+  }
+  .news-item .t{font-size:13px;letter-spacing:.14em;color:var(--moss-2);text-transform:uppercase}
+  .news-item .h{font-size:19px;line-height:1.35;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .news-item.hl .h{color:var(--beige)}
+  .news-item:focus,.news-item.focus{background:rgba(182,196,168,.1);border-color:rgba(182,196,168,.5);transform:translateX(6px)}
+  .news-list li.cut{visibility:hidden}
+  .news-src{font-size:15px;color:var(--faint);margin-top:10px}
+  .skeleton{height:20px;border-radius:8px;background:linear-gradient(90deg,var(--surface),var(--surface-2),var(--surface));background-size:200% 100%;animation:sk 1.4s linear infinite;margin:18px 0}
+  @keyframes sk{to{background-position:-200% 0}}
+
+  /* ---------- Footer ---------- */
+  footer{grid-column:1;grid-row:3;display:flex;align-items:center;justify-content:space-between;min-height:64px}
+  .hints{display:flex;gap:30px;font-size:16px;color:var(--faint);letter-spacing:.04em}
+  .hints kbd{
+    font-family:inherit;font-size:14px;padding:4px 9px;margin-right:8px;border-radius:8px;
+    border:1px solid var(--line-2);color:var(--muted);
+  }
+  .player{
+    display:flex;align-items:center;gap:18px;padding:10px 12px 10px 24px;border-radius:99px;
+    background:rgba(232,226,212,.06);border:1px solid var(--line-2);
+    opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity .4s,transform .4s var(--ease);
+  }
+  .player.on{opacity:1;transform:none;pointer-events:auto}
+  .player .eq{display:flex;position:static}
+  .player .live{font-size:13px;letter-spacing:.2em;color:var(--moss);text-transform:uppercase}
+  .player .st{font-family:Sora,sans-serif;font-size:21px}
+  .player.loading .eq i{animation-play-state:paused;opacity:.4}
+  .player .stop{
+    width:48px;height:48px;border-radius:50%;display:grid;place-items:center;
+    background:rgba(255,255,255,.06);border:1px solid var(--line-2);transition:all .25s;
+  }
+  .player .stop svg{width:18px;height:18px;fill:var(--beige)}
+  .player .stop:focus,.player .stop.focus{background:var(--moss);border-color:var(--moss);box-shadow:0 0 30px -4px var(--moss-glow);transform:scale(1.1)}
+  .player .stop:focus svg,.player .stop.focus svg{fill:#1a1d17}
+
+  /* Weer-iconen */
+  .wi{fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .wi .sun{stroke:var(--beige);stroke-width:1.6}
+  .wi .cloud{stroke:var(--text);stroke-width:1.6;fill:rgba(12,14,12,.65)}
+  .wi .rain{stroke:var(--moss);stroke-width:1.6}
+  .wi .snow{fill:var(--text);stroke:none}
+  .wi .bolt{stroke:var(--beige);stroke-width:1.6}
+  .wi .fog{stroke:var(--muted);stroke-width:1.6}
+
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="grid-overlay"></div>
+<div class="vignette"></div>
+
+<div id="stage">
+  <header>
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true"></div>
+      <div>
+        <div class="greeting" id="greeting">Goedemiddag</div>
+        <div class="sub" id="subline">Welkom thuis</div>
+      </div>
+    </div>
+    <div class="status">
+      <div class="wx-mini" id="wxMini"><span>Weer laden…</span></div>
+      <div class="divider"></div>
+      <div class="clock">
+        <div class="time" id="time">--<span>:</span>--</div>
+        <div class="date" id="date"></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="label">Start</div>
+      <div class="categories" id="categories"></div>
+    </section>
+    <section>
+      <div class="label"><span id="shelfTitle">Games</span><span class="count" id="shelfCount"></span></div>
+      <div class="shelf-wrap" id="shelfWrap">
+        <div class="shelf" id="shelf"></div>
+        <div class="shelf-fade"></div>
+      </div>
+    </section>
+  </main>
+
+  <aside>
+    <div class="card" id="weatherCard">
+      <div class="label" id="wxLabel">Weer</div>
+      <div class="wx-now">
+        <div>
+          <div class="wx-temp" id="wxTemp">--<sup>°</sup></div>
+          <div class="wx-desc" id="wxDesc">&nbsp;</div>
+          <div class="wx-extra" id="wxExtra"></div>
+        </div>
+        <div class="wx-icon" id="wxIcon"></div>
+      </div>
+      <div class="wx-days" id="wxDays"></div>
+    </div>
+
+    <div class="card news">
+      <div class="label">Laatste nieuws</div>
+      <ul class="news-list" id="news">
+        <li class="skeleton"></li><li class="skeleton" style="width:70%"></li>
+        <li class="skeleton"></li><li class="skeleton" style="width:80%"></li>
+      </ul>
+      <div class="news-src" id="newsSrc">NOS Nieuws</div>
+    </div>
+  </aside>
+
+  <footer>
+    <div class="hints">
+      <span><kbd>◀ ▶ ▲ ▼</kbd>Navigeren</span>
+      <span><kbd>OK</kbd>Openen</span>
+      <span><kbd>Terug</kbd>Naar start</span>
+    </div>
+    <div class="player" id="player">
+      <div class="eq"><i></i><i></i><i></i><i></i></div>
+      <div>
+        <div class="live" id="playerState">Live</div>
+        <div class="st" id="playerStation">—</div>
+      </div>
+      <button class="stop nav" id="stopBtn" aria-label="Stop radio">
+        <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+      </button>
+    </div>
+  </footer>
+</div>
+
+<audio id="audio" preload="none"></audio>
+
+<script>
+/* =====================================================================
+   INSTELLINGEN — pas hier je eigen tegels, zenders en locatie aan
+   ===================================================================== */
+const CONFIG = {
+  name: "",                                   // bv. "Max" → "Goedemiddag, Max"
+  location: { name: "Den Haag", lat: 52.0705, lon: 4.3007 },
+  newsFeed: "https://feeds.nos.nl/nosnieuwsalgemeen",
+};
+
+const ICONS = {
+  games:'<svg viewBox="0 0 24 24"><path d="M6 8h12a4 4 0 0 1 4 4v1a4 4 0 0 1-7 2.6l-.6-.6H9.6l-.6.6A4 4 0 0 1 2 13v-1a4 4 0 0 1 4-4z"/><path d="M7 11v3M5.5 12.5h3"/><circle cx="16" cy="11.5" r=".6"/><circle cx="18" cy="13.5" r=".6"/></svg>',
+  entertainment:'<svg viewBox="0 0 24 24"><rect x="2.5" y="4.5" width="19" height="13" rx="3"/><path d="M8 21h8M10.5 9v4.5l4-2.25z"/></svg>',
+  radio:'<svg viewBox="0 0 24 24"><rect x="2.5" y="8" width="19" height="12" rx="3"/><path d="M7 8l9-4.5"/><circle cx="15.5" cy="14" r="2.6"/><path d="M6 12.5h4M6 15.5h4"/></svg>',
+  browser:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19M12 2.5c2.6 2.6 3.8 6 3.8 9.5s-1.2 6.9-3.8 9.5c-2.6-2.6-3.8-6-3.8-9.5S9.4 5.1 12 2.5z"/></svg>',
+  arrow:'<svg class="arrow" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>',
+  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  web:'<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+};
+
+const CATEGORIES = [
+  { id:"games", title:"Games", sub:"Speel direct", items:[
+      { type:"game", name:"Mario Game", meta:"Platformer · eigen game", url:"https://maxose01.github.io/mario-game/" },
+      { type:"soon", name:"Nieuwe game", meta:"Binnenkort" },
+  ]},
+  { id:"entertainment", title:"Entertainment", sub:"Films, series & tv", items:[
+      { type:"link", name:"Netflix", meta:"Films & series", mono:"N", url:"https://www.netflix.com/browse",
+        tint:"radial-gradient(90% 120% at 100% 0%,rgba(150,40,35,.35),transparent 60%)" },
+      { type:"link", name:"Pathé Thuis", meta:"Huur & koop films", mono:"P", url:"https://www.pathe-thuis.nl/",
+        tint:"radial-gradient(90% 120% at 100% 0%,rgba(220,200,169,.22),transparent 60%)" },
+      { type:"link", name:"NLZiet", meta:"Terugkijken & live", mono:"NL", url:"https://app.nlziet.nl/",
+        tint:"radial-gradient(90% 120% at 100% 0%,rgba(110,75,52,.5),transparent 60%)" },
+      { type:"link", name:"NPO Start", meta:"Publieke omroep", mono:"NPO", url:"https://npo.nl/start",
+        tint:"radial-gradient(90% 120% at 100% 0%,rgba(200,110,50,.28),transparent 60%)" },
+  ]},
+  { id:"radio", title:"Radio", sub:"11 zenders · live", items:[
+      { type:"station", name:"Radio 10",        meta:"Hits van toen",      stream:"https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO10.mp3" },
+      { type:"station", name:"Radio 538",       meta:"Hits & dance",       stream:"https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO538.mp3" },
+      { type:"station", name:"Qmusic",          meta:"Meer muziek",        stream:"https://icecast-qmusicnl-cdp.triple-it.nl/Qmusic_nl_live_96.mp3" },
+      { type:"station", name:"Qmusic Non-Stop", meta:"Alleen muziek",      stream:"https://icecast-qmusicnl-cdp.triple-it.nl/Qmusic_nl_nonstop_96.mp3" },
+      { type:"station", name:"Radio JOE",       meta:"Feel good",          stream:"https://icecast-qmusicnl-cdp.triple-it.nl/JOE_nl_live_96.mp3" },
+      { type:"station", name:"Radio West",      meta:"Regionaal · website",url:"https://www.omroepwest.nl/radio" },
+      { type:"station", name:"NPO Radio 1",     meta:"Nieuws & sport",     stream:"https://icecast.omroep.nl/radio1-bb-mp3" },
+      { type:"station", name:"NPO Radio 2",     meta:"Muziek & meer",      stream:"https://icecast.omroep.nl/radio2-bb-mp3" },
+      { type:"station", name:"NPO 3FM",         meta:"Pop & alternatief",  stream:"https://icecast.omroep.nl/3fm-bb-mp3" },
+      { type:"station", name:"NPO Radio 4",     meta:"Klassiek",           stream:"https://icecast.omroep.nl/radio4-bb-mp3" },
+      { type:"station", name:"NPO Radio 5",     meta:"Nostalgie",          stream:"https://icecast.omroep.nl/radio5-bb-mp3" },
+  ]},
+  { id:"browser", title:"Browser", sub:"Google.nl", action:"https://www.google.nl", items:[
+      { type:"link", name:"Google", meta:"Zoeken op het web", glyph:"search", url:"https://www.google.nl", wide:true },
+  ]},
+];
+
+/* =====================================================================
+   Schaal de 1920×1080 stage naar het scherm
+   ===================================================================== */
+const stage = document.getElementById("stage");
+function fit(){
+  const s = Math.min(innerWidth/1920, innerHeight/1080);
+  stage.style.transform = `translate(-50%,-50%) scale(${s})`;
+}
+addEventListener("resize", fit); fit();
+
+/* =====================================================================
+   Tegels & shelf
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const catWrap = $("categories"), shelf = $("shelf");
+let currentCat = null, lastCatEl = null;
+
+function open(url){ window.open(url, "_blank", "noopener"); }
+
+CATEGORIES.forEach(c => {
+  const b = document.createElement("button");
+  b.className = "cat nav"; b.dataset.cat = c.id;
+  b.innerHTML = `<div class="ico">${ICONS[c.id]}</div>${ICONS.arrow}<h2>${c.title}</h2><p>${c.sub}</p>`;
+  b.addEventListener("click", () => {
+    if (c.action) return open(c.action);
+    showShelf(c);
+    const first = shelf.querySelector(".nav"); if (first) focusEl(first);
+  });
+  catWrap.appendChild(b);
+});
+
+function pixelArt(){
+  // klein pixel-icoontje (paddenstoel-achtig) voor de game-tegel
+  const map = "01110"+"12121"+"11111"+"00200"+"02220";
+  return '<div class="pixels">' + [...map].map(v => `<i class="${v==1?'on':v==2?'m':''}"></i>`).join("") + "</div>";
+}
+
+function showShelf(c){
+  if (currentCat === c.id) return;
+  currentCat = c.id;
+  document.querySelectorAll(".cat").forEach(el => el.classList.toggle("selected", el.dataset.cat === c.id));
+  $("shelfTitle").textContent = c.title;
+  $("shelfCount").textContent = c.id === "radio" ? "11 zenders · live" : `${c.items.filter(i=>i.type!=="soon").length} ${c.id==="games"?"game":"snelkoppeling"}${c.items.filter(i=>i.type!=="soon").length===1?"":"s"}`;
+  shelf.innerHTML = "";
+  c.items.forEach(it => {
+    const el = document.createElement("button");
+    el.className = "item nav";
+    if (it.tint) el.style.setProperty("--tint", it.tint);
+    if (it.type === "game"){
+      el.classList.add("game");
+      el.innerHTML = `${pixelArt()}<span class="badge" style="right:auto;left:24px">Spelen</span><div class="name">${it.name}</div><div class="meta">${it.meta}</div>`;
+      el.onclick = () => open(it.url);
+    } else if (it.type === "soon"){
+      el.classList.add("soon");
+      el.innerHTML = `<div class="glyph">${ICONS.plus}</div><div class="name">${it.name}</div><div class="meta">${it.meta}</div>`;
+    } else if (it.type === "station"){
+      el.classList.add("station");
+      el.dataset.name = it.name;
+      el.innerHTML = `<span class="badge">${it.stream ? "Live" : "Web"}</span><div class="eq"><i></i><i></i><i></i><i></i></div>
+        <div class="mono" style="font-size:30px">${stationMono(it.name)}</div><div class="name">${it.name}</div><div class="meta">${it.meta}</div>`;
+      if (playing && playing.name === it.name) el.classList.add("playing");
+      el.onclick = () => it.stream ? play(it) : open(it.url);
+    } else {
+      if (it.wide) el.classList.add("wide");
+      el.innerHTML = `${it.glyph ? `<div class="glyph">${ICONS[it.glyph]}</div>` : `<div class="mono">${it.mono}</div>`}
+        <span class="badge">${ICONS.web.replace('<svg','<svg style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;vertical-align:-2px"')}</span>
+        <div class="name">${it.name}</div><div class="meta">${it.meta}</div>`;
+      el.onclick = () => open(it.url);
+    }
+    shelf.appendChild(el);
+  });
+  shelf.scrollLeft = 0;
+  shelf.classList.remove("swap"); void shelf.offsetWidth; shelf.classList.add("swap");
+  requestAnimationFrame(() => $("shelfWrap").classList.toggle("overflow", shelf.scrollWidth > shelf.clientWidth + 4));
+}
+function stationMono(n){
+  const m = n.match(/\d+/); if (m) return m[0];
+  if (/3FM/.test(n)) return "3FM";
+  if (/Non-Stop/.test(n)) return "Q∞";
+  return n.replace(/^Radio\s+/,"")[0];
+}
+
+/* =====================================================================
+   Radio
+   ===================================================================== */
+const audio = $("audio"), player = $("player");
+let playing = null;
+function play(st){
+  if (playing && playing.name === st.name) return stop();
+  playing = st;
+  audio.src = st.stream; audio.play().catch(()=>{ $("playerState").textContent = "Kan niet afspelen"; });
+  $("playerStation").textContent = st.name;
+  $("playerState").textContent = "Verbinden…";
+  player.classList.add("on","loading");
+  markPlaying();
+}
+function stop(){
+  audio.pause(); audio.removeAttribute("src"); audio.load();
+  playing = null; player.classList.remove("on","loading"); markPlaying();
+  if (focused === $("stopBtn")) focusEl(lastCatEl || document.querySelector(".cat"));
+}
+function markPlaying(){
+  document.querySelectorAll(".item.station").forEach(el => el.classList.toggle("playing", !!playing && el.dataset.name === playing.name));
+}
+audio.addEventListener("playing", () => { $("playerState").textContent = "Live"; player.classList.remove("loading"); });
+audio.addEventListener("waiting", () => player.classList.add("loading"));
+audio.addEventListener("error", () => { if (playing) { $("playerState").textContent = "Stream niet bereikbaar"; player.classList.add("loading"); } });
+$("stopBtn").addEventListener("click", stop);
+
+/* =====================================================================
+   Afstandsbediening / toetsenbord: ruimtelijke navigatie
+   ===================================================================== */
+let focused = null;
+function markFocus(el){
+  if (focused && focused !== el) focused.classList.remove("focus");
+  focused = el; if (el) el.classList.add("focus");
+  if (el && el.classList.contains("cat")){ lastCatEl = el; const c = CATEGORIES.find(c => c.id === el.dataset.cat); if (c) showShelf(c); }
+}
+document.addEventListener("focusin", e => { const el = e.target.closest?.(".nav"); if (el) markFocus(el); });
+function focusEl(el){
+  if (!el) return;
+  el.focus({preventScroll:true}); markFocus(el);
+  if (el.closest(".shelf")) el.scrollIntoView({block:"nearest", inline:"nearest", behavior:"smooth"});
+}
+function navigables(){
+  return [...document.querySelectorAll(".nav")].filter(el => {
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return false;
+    if (el.closest(".player") && !player.classList.contains("on")) return false;
+    if (el.closest("li.cut")) return false;
+    return true;
+  });
+}
+function move(dir){
+  const list = navigables();
+  const cur = list.includes(document.activeElement) ? document.activeElement : focused;
+  if (!cur || !list.includes(cur)) return focusEl(list[0]);
+  const a = cur.getBoundingClientRect();
+  const ac = {x:a.left+a.width/2, y:a.top+a.height/2};
+  let best = null, bestScore = Infinity;
+  for (const el of list){
+    if (el === cur) continue;
+    const b = el.getBoundingClientRect();
+    const bc = {x:b.left+b.width/2, y:b.top+b.height/2};
+    const dx = bc.x-ac.x, dy = bc.y-ac.y;
+    let main, cross;
+    if (dir==="left"){  if (b.right > a.left+4) continue;  main=-dx; cross=Math.abs(dy); }
+    if (dir==="right"){ if (b.left < a.right-4) continue;  main=dx;  cross=Math.abs(dy); }
+    if (dir==="up"){    if (b.bottom > a.top+4) continue;  main=-dy; cross=Math.abs(dx); }
+    if (dir==="down"){  if (b.top < a.bottom-4) continue;  main=dy;  cross=Math.abs(dx); }
+    // in de shelf: horizontaal binnen dezelfde rij houden
+    const score = main + cross * (dir==="left"||dir==="right" ? 4 : 1.2);
+    if (score < bestScore){ bestScore = score; best = el; }
+  }
+  // omhoog uit de shelf → terug naar de geselecteerde categorie
+  if (dir==="up" && cur.closest(".shelf")) best = document.querySelector(".cat.selected") || best;
+  // omlaag vanaf een categorie → eerste item van de shelf
+  if (dir==="down" && cur.classList.contains("cat")) best = shelf.querySelector(".nav") || best;
+  if (best) focusEl(best);
+}
+const KEYS = {37:"left",38:"up",39:"right",40:"down"};
+const BACK = new Set([8,27,10009,461,166]);   // Backspace, Esc, Tizen, webOS, Android TV
+document.addEventListener("keydown", e => {
+  if (KEYS[e.keyCode]){ e.preventDefault(); move(KEYS[e.keyCode]); return; }
+  if (BACK.has(e.keyCode)){
+    e.preventDefault();
+    focusEl(document.querySelector(".cat.selected") || document.querySelector(".cat"));
+  }
+});
+// muis: hover = focus, zodat het ook met een cursor/air mouse lekker werkt
+document.addEventListener("mouseover", e => {
+  const el = e.target.closest(".nav");
+  if (el && el !== focused && !el.closest(".news-list")) focusEl(el);
+});
+
+/* =====================================================================
+   Klok & begroeting
+   ===================================================================== */
+function tick(){
+  const d = new Date();
+  const h = String(d.getHours()).padStart(2,"0"), m = String(d.getMinutes()).padStart(2,"0");
+  $("time").innerHTML = `${h}<span>:</span>${m}`;
+  $("date").textContent = d.toLocaleDateString("nl-NL",{weekday:"long",day:"numeric",month:"long"});
+  const hr = d.getHours();
+  const g = hr < 6 ? "Goedenacht" : hr < 12 ? "Goedemorgen" : hr < 18 ? "Goedemiddag" : "Goedenavond";
+  $("greeting").innerHTML = CONFIG.name ? `${g}, <b>${CONFIG.name}</b>` : g;
+}
+tick(); setInterval(tick, 1000 * 5);
+
+/* =====================================================================
+   Weer (Open-Meteo, geen API-sleutel nodig)
+   ===================================================================== */
+const WMO = {
+  0:["Onbewolkt","sun"],1:["Overwegend helder","sun"],2:["Half bewolkt","partly"],3:["Bewolkt","cloud"],
+  45:["Mist","fog"],48:["Rijpmist","fog"],51:["Lichte motregen","drizzle"],53:["Motregen","drizzle"],55:["Dichte motregen","drizzle"],
+  56:["IJzel","drizzle"],57:["IJzel","drizzle"],61:["Lichte regen","rain"],63:["Regen","rain"],65:["Zware regen","rain"],
+  66:["IJzel","rain"],67:["IJzel","rain"],71:["Lichte sneeuw","snow"],73:["Sneeuw","snow"],75:["Zware sneeuw","snow"],77:["Korrelsneeuw","snow"],
+  80:["Buien","rain"],81:["Regenbuien","rain"],82:["Zware buien","rain"],85:["Sneeuwbuien","snow"],86:["Sneeuwbuien","snow"],
+  95:["Onweer","storm"],96:["Onweer met hagel","storm"],99:["Onweer met hagel","storm"],
+};
+function wIcon(kind, night){
+  const sun = night
+    ? '<path class="sun" d="M20 7a10 10 0 1 0 13 13A8 8 0 0 1 20 7z"/>'
+    : '<g class="sun"><circle cx="20" cy="18" r="7"/><path d="M20 4v3M20 29v3M6 18h3M31 18h3M10 8l2 2M28 26l2 2M10 28l2-2M28 10l2-2"/></g>';
+  const cloud = (x=0,y=0) => `<path class="cloud" transform="translate(${x} ${y})" d="M16 40h22a8 8 0 0 0 0-16 11 11 0 0 0-21-2 9 9 0 0 0-1 18z"/>`;
+  const svg = c => `<svg class="wi" viewBox="0 0 56 56">${c}</svg>`;
+  switch(kind){
+    case "sun": return svg(night ? '<g transform="translate(8 8)">'+sun+'</g>' : '<g transform="translate(8 10)">'+sun+'</g>');
+    case "partly": return svg('<g transform="translate(4 2)">'+sun+'</g>'+cloud(4,6));
+    case "cloud": return svg(cloud(-2,0)+cloud(4,6).replace('class="cloud"','class="cloud" opacity=".9"'));
+    case "fog": return svg(cloud(0,-6)+'<path class="fog" d="M10 44h30M16 50h28"/>');
+    case "drizzle": return svg(cloud(0,-6)+'<path class="rain" d="M20 42l-1 4M30 42l-1 4M40 42l-1 4"/>');
+    case "rain": return svg(cloud(0,-6)+'<path class="rain" d="M20 41l-3 8M30 41l-3 8M40 41l-3 8"/>');
+    case "snow": return svg(cloud(0,-6)+'<circle class="snow" cx="19" cy="45" r="1.8"/><circle class="snow" cx="29" cy="49" r="1.8"/><circle class="snow" cx="39" cy="45" r="1.8"/>');
+    case "storm": return svg(cloud(0,-6)+'<path class="bolt" d="M30 38l-5 8h6l-4 8"/>');
+  }
+  return svg(cloud());
+}
+async function loadWeather(){
+  const {lat, lon, name} = CONFIG.location;
+  $("wxLabel").textContent = `Weer · ${name}`;
+  try{
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+      + `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m,is_day`
+      + `&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FAmsterdam&forecast_days=6`;
+    const d = await (await fetch(url)).json();
+    const c = d.current, [desc, kind] = WMO[c.weather_code] || ["—","cloud"];
+    const night = !c.is_day;
+    $("wxTemp").innerHTML = `${Math.round(c.temperature_2m)}<sup>°</sup>`;
+    $("wxDesc").textContent = desc;
+    $("wxExtra").innerHTML = `<span>Voelt als ${Math.round(c.apparent_temperature)}°</span><span>Wind ${Math.round(c.wind_speed_10m)} km/u</span><span>${c.relative_humidity_2m}%</span>`;
+    $("wxIcon").innerHTML = wIcon(kind, night);
+    $("wxMini").innerHTML = `${wIcon(kind, night)}<b>${Math.round(c.temperature_2m)}°</b><span>${name}</span>`;
+    $("subline").textContent = `${desc} in ${name} · max ${Math.round(d.daily.temperature_2m_max[0])}°`;
+    $("wxDays").innerHTML = d.daily.time.slice(1,6).map((t,i) => {
+      const k = (WMO[d.daily.weather_code[i+1]]||["","cloud"])[1];
+      const day = new Date(t+"T12:00").toLocaleDateString("nl-NL",{weekday:"short"}).replace(".","");
+      return `<div class="wx-day">${day}${wIcon(k)}<b>${Math.round(d.daily.temperature_2m_max[i+1])}°</b><small>${Math.round(d.daily.temperature_2m_min[i+1])}°</small></div>`;
+    }).join("");
+  }catch(e){
+    $("wxDesc").textContent = "Weer niet beschikbaar";
+    $("wxMini").innerHTML = `<span>Geen weerdata</span>`;
+  }
+}
+loadWeather(); setInterval(loadWeather, 15*60*1000);
+
+/* =====================================================================
+   Nieuws (NOS RSS via rss2json, met fallback via allorigins)
+   ===================================================================== */
+async function fetchNews(){
+  try{
+    const r = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(CONFIG.newsFeed)}`);
+    const d = await r.json();
+    if (d.status === "ok" && d.items?.length) return d.items.map(i => ({title:i.title, link:i.link, date:new Date(i.pubDate.replace(" ","T")+"Z")}));
+  }catch(e){}
+  const r = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(CONFIG.newsFeed)}`);
+  const xml = new DOMParser().parseFromString(await r.text(), "text/xml");
+  return [...xml.querySelectorAll("item")].map(i => ({
+    title:i.querySelector("title")?.textContent, link:i.querySelector("link")?.textContent,
+    date:new Date(i.querySelector("pubDate")?.textContent),
+  }));
+}
+let newsItems = [], newsOffset = 0;
+function relTime(d){
+  const m = Math.round((Date.now() - d) / 60000);
+  if (isNaN(m)) return "";
+  if (m < 1) return "Zojuist";
+  if (m < 60) return `${m} min geleden`;
+  const h = Math.round(m/60);
+  return h < 24 ? `${h} uur geleden` : d.toLocaleDateString("nl-NL",{day:"numeric",month:"short"});
+}
+function renderNews(){
+  const list = $("news");
+  if (!newsItems.length) return;
+  const shown = [];
+  for (let i=0;i<5;i++) shown.push(newsItems[(newsOffset+i) % newsItems.length]);
+  const hadFocus = list.contains(document.activeElement);
+  list.innerHTML = shown.map((n,i) => `<li><a class="news-item nav${i===0?' hl':''}" href="${n.link}" target="_blank" rel="noopener">
+    <div class="t">${relTime(n.date)}</div><div class="h">${n.title}</div></a></li>`).join("");
+  const lb = list.getBoundingClientRect().bottom + 1;
+  list.querySelectorAll("li").forEach(li => li.classList.toggle("cut", li.getBoundingClientRect().bottom > lb));
+  if (hadFocus) focusEl(list.querySelector(".nav"));
+}
+async function loadNews(){
+  try{
+    newsItems = (await fetchNews()).filter(n => n.title).slice(0, 15);
+    newsOffset = 0; renderNews();
+    $("newsSrc").textContent = `NOS Nieuws · bijgewerkt ${new Date().toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"})}`;
+  }catch(e){
+    $("news").innerHTML = `<li class="news-item"><div class="h" style="color:var(--muted)">Nieuws kon niet geladen worden.</div></li>`;
+  }
+}
+loadNews(); setInterval(loadNews, 10*60*1000);
+// elke 12 seconden doorschuiven, behalve als iemand in de nieuwslijst navigeert
+setInterval(() => {
+  if (newsItems.length > 5 && !$("news").contains(document.activeElement)){ newsOffset = (newsOffset+1) % newsItems.length; renderNews(); }
+}, 12000);
+
+/* Start met focus op de eerste tegel */
+window.addEventListener("load", () => focusEl(document.querySelector(".cat")));
+showShelf(CATEGORIES[0]);
+</script>
+</body>
+</html>
